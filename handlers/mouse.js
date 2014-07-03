@@ -119,16 +119,16 @@ define([
 		props.altKey = mouseEvent.altKey;
 		props.shiftKey = mouseEvent.shiftKey;
 		props.metaKey = mouseEvent.metaKey;
+		props.pageX = mouseEvent.pageX;
+		props.pageY = mouseEvent.pageY;
 		// normalize button/buttons values
 		// http://www.w3.org/TR/pointerevents/#chorded-button-interactions
 		var buttonValue = mouseEvent.button,
 			buttonsValue = (mouseEvent.buttons !== undefined) ? mouseEvent.buttons :
 				utils.which2buttons(mouseEvent.which);
-		// on mouse move with no buttons pressed, buttonValue should be -1 but browsers implement
-		// with unsigned int: http://www.w3.org/TR/DOM-Level-3-Events/
-		// so we set it to 0.
-		if (mouseEvent.type === "mousemove" || mouseEvent.type === "mouseup") {
-			buttonValue = 0;
+
+		if (mouseEvent.type === "mousemove") {
+			buttonValue = -1;
 		}
 		props.button = buttonValue;
 		props.buttons = buttonsValue;

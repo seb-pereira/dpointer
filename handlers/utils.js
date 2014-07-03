@@ -75,17 +75,100 @@ define([
 	 * @param pointerType pointer event type name ("pointerdown", "pointerup"...)
 	 * @param nativeEvent underlying event which contributes to this pointer event.
 	 * @param props event properties (optional)
-	 * @returns MouseEvent a  Pointer event
+	 * @returns Event a  Pointer event
 	 */
 	utils.Pointer = function (pointerType, nativeEvent, props) {
 		props = props || {};
-		props.bubbles = ("bubbles" in props) ? props.bubbles : true;
-		props.cancelable = (props.cancelable) || true;
+		var e = document.createEvent("Event");
+		e.initEvent(
+			pointerType, // event type
+			("bubbles" in props) ? props.bubbles : true, // bubbles
+				props.cancelable || true, // cancelable
+				props.view || null, // view
+				props.detail || null // detail
+		);
 
-		var e = createMouseEvent(pointerType, props);
-		fixButtonsProperties(e, props.buttons);
-		setPointerProperties(e, props);
+		//mouse event properties
+		//http://www.w3.org/TR/DOM-Level-3-Events/#events-mouseevents
+		//todo use defineProperties to prevent value changes
+		e.screenX = props.screenX || 0;
+		e.screenY = props.screenY || 0;
+		e.clientX = props.clientX || 0;
+		e.clientY = props.clientY || 0;
+		e.ctrlKey = props.ctrlKey || null;
+		e.altKey = props.altKey || null;
+		e.shiftKey = props.shiftKey || null;
+		e.metaKey = props.metaKey || null;
+		e.button = props.button || 0;
+		e.buttons = props.buttons || 0;
+
+		if (!("which" in e)) {
+			console.log("which not defined");
+			Object.defineProperty(e, "which", {
+				value: (props.which || 0),
+				enumerable: true,
+				writable: false
+			});
+		} else {
+			//on FF, otw TypeError: setting a property that has only a getter
+			Object.defineProperty(e, "which", {
+				get: function () {
+					return props.which || 0;
+				},
+				enumerable: true
+			});
+		}
+
+		e.relatedTarget = props.relatedTarget || null;
+
+		//non standard properties
+		if (!("pageX" in e)) {
+			console.log("pageX not defined");
+			Object.defineProperty(e, "pageX", {
+				value: (props.pageX || 0),
+				enumerable: true,
+				writable: false
+			});
+		} else {
+			//on FF, otw TypeError: setting a property that has only a getter
+			Object.defineProperty(e, "pageX", {
+				get: function () {
+					return  props.pageX || 0;
+				},
+				enumerable: true
+			});
+		}
+
+		if (!("pageY" in e)) {
+			console.log("pageY not defined");
+			Object.defineProperty(e, "pageY", {
+				value: (props.pageY || 0),
+				enumerable: true,
+				writable: false
+			});
+		} else {
+			//on FF, otw TypeError: setting a property that has only a getter
+			Object.defineProperty(e, "pageY", {
+				get: function () {
+					return  props.pageY || 0;
+				},
+				enumerable: true
+			});
+		}
+		//pointer events propertie
+		//https://dvcs.w3.org/hg/pointerevents/raw-file/tip/pointerEvents.html#pointerevent-interface
+		e.pointerId = props.pointerId || 0;
+		e.width = props.width || 0;
+		e.height = props.height || 0;
+		e.pressure = props.pressure || (e.buttons ? 0.5 : 0);
+		e.tiltX = props.tiltX || 0;
+		e.tiltY = props.tiltY || 0;
+		e.pointerType = props.pointerType || "";
+		e.isPrimary = props.isPrimary || false;
+
+		//preventDefault and stopPropagation
 		mapNativeFunctions(e, nativeEvent);
+
 		return e;
 	};
 
@@ -246,85 +329,18 @@ define([
 		utils.removeEventListener(window.document, "click", clickHandler, true);
 	};
 
-
-	/**
-	 *
-	 * @param pointerType pointer event type name ("pointerdown", "pointerup"...)
-	 * @param props event properties
-	 * @returns MouseEvent
-	 */
-	function createMouseEvent(pointerType, props) {
-		// Mouse Event spec
-		// http://www.w3.org/TR/2001/WD-DOM-Level-3-Events-20010823/events.html#Events-eventgroupings-mouseevents
-		// DOM4 Event: https://dvcs.w3.org/hg/d4e/raw-file/tip/source_respec.htm
-		if (utils.SUPPORT_MOUSE_EVENT_CONSTRUCTOR) {
-			return new MouseEvent(pointerType, props);
-		}
-		var e = document.createEvent("MouseEvents");
-		/* jshint ignore:start */
-		e.initMouseEvent(
-			pointerType,
-			(props.bubbles),
-			(props.cancelable),
-			(props.view) || null,
-			(props.detail) || null,
-			(props.screenX) || 0,
-			(props.screenY) || 0,
-			(props.clientX) || 0,
-			(props.clientY) || 0,
-			(props.ctrlKey) || false,
-			(props.altKey) || false,
-			(props.shiftKey) || false,
-			(props.metaKey) || false,
-			(props.button) || 0,
-			(props.relatedTarget) ||
-				null);
-		/* jshint ignore:end */
-		return e;
-	}
-
-	/**
-	 *
-	 * @param e event
-	 * @param buttonsValue buttons property value
-	 */
-	function fixButtonsProperties(e, buttonsValue) {
-		if (!("buttons" in e)) {
-			Object.defineProperty(e, "buttons", {
-				value: (buttonsValue || 0),
-				enumerable: true,
-				writable: false
-			});
-		} else {
-			Object.defineProperty(e, "buttons", {
-				get: function () {
-					return buttonsValue;
-				},
-				enumerable: true
-			});
-		}
-	}
-
-	/**
-	 *
-	 * @param e event
-	 * @param props event properties
-	 */
-	function setPointerProperties(e, props) {
-		// Pointer events default values:
-		// http://www.w3.org/TR/pointerevents/#pointerevent-interface
-		Object.defineProperties(e, {
-			pointerId: { value: props.pointerId || 0, enumerable: true},
-			width: {value: props.width || 0, enumerable: true},
-			height: {value: props.height || 0, enumerable: true    },
-			pressure: {value: props.pressure || 0, enumerable: true},
-			tiltX: {value: props.tiltX || 0, enumerable: true},
-			tiltY: {value: props.tiltY || 0, enumerable: true},
-			pointerType: {value: props.pointerType || "", enumerable: true},
-			hwTimestamp: {value: props.hwTimestamp || 0, enumerable: true},
-			isPrimary: {value: props.isPrimary || false, enumerable: true}
-		});
-	}
+	var EventProperties = {
+		pointerover: {bubbles: true, cancelable: true},
+		pointerenter: {bubbles: false, cancelable: false},
+		pointerdown: {bubbles: true, cancelable: true},
+		pointermove: {bubbles: true, cancelable: true},
+		pointerup: {bubbles: true, cancelable: true},
+		pointercancel: {bubbles: true, cancelable: false},
+		pointerout: {bubbles: true, cancelable: true},
+		pointerleave: {bubbles: false, cancelable: false},
+		gotpointercapture: {bubbles: true, cancelable: false},
+		lostpointercapture: {bubbles: true, cancelable: false},
+	};
 
 	/**
 	 *
@@ -335,16 +351,27 @@ define([
 		if (e.type === utils.GOTCAPTURE || e.type === utils.LOSTCAPTURE) {
 			return; //no default action on pointercapture events
 		}
-		var _stopPropagation = e.stopPropagation,
-			_preventDefault = e.preventDefault;
-		e.stopPropagation = function () {
-			nativeEvent.stopPropagation();
-			_stopPropagation.apply(this);
-		};
-		e.preventDefault = function () {
-			nativeEvent.preventDefault();
-			_preventDefault.apply(this);
-		};
+		if (EventProperties[e.type].bubbles) {
+			var _stopPropagation = e.stopPropagation;
+			e.stopPropagation = function () {
+				nativeEvent.stopPropagation();
+				_stopPropagation.apply(this);
+			};
+			if (e.stopImmediatePropagation) {
+				var _stopImmediatePropagation = e.stopImmediatePropagation;
+				e.stopImmediatePropagation = function () {
+					nativeEvent.stopImmediatePropagation();
+					_stopImmediatePropagation.apply(this);
+				};
+			}
+		}
+		if (EventProperties[e.type].cancelable) {
+			var _preventDefault = e.preventDefault;
+			e.preventDefault = function () {
+				nativeEvent.preventDefault();
+				_preventDefault.apply(this);
+			};
+		}
 	}
 
 	/**

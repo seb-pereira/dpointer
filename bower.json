@@ -1,6 +1,9 @@
 {
 	"name": "dpointer",
 	"version": "0.1.0-dev",
+	"devDependencies": {
+		"requirejs-domready": ">=2.0.1"
+	},
 	"ignore": [
 		".jshintrc",
 		".gitattributes",

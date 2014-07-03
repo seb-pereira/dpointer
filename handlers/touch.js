@@ -233,16 +233,19 @@ define([
 		props.altKey = touchEvent.altKey;
 		props.shiftKey = touchEvent.shiftKey;
 		props.metaKey = touchEvent.metaKey;
+		props.pageX = touch.pageX;
+		props.pageY = touch.pageY;
 		if (TouchTracker.hasCapture(touch.identifier)) {  // W3C spec §10.1
 			props.relatedTarget = null;
 		}
-		// normalize button/buttons values
-		// http://www.w3.org/TR/pointerevents/#chorded-button-interactions
-		// for pointer: button=0, buttons=1, which=1 for all events but PointerMove: button=-1,buttons=0,which=0
-		// as it is not possible to assign negative value to button(s), just use 0.
-		props.button = 0;
+		//normalize button/buttons values
+		//http://www.w3.org/TR/pointerevents/#chorded-button-interactions
+		//Mouse move with no buttons pressed: button=-1, buttons=0
+		//Touch Contact, Pen contact (with no modifier buttons pressed): button=0 buttons=1
+		//todo: on pointerup and all subsequent pointer events with the same pointer id, button should be 1
+		props.button = (pointerType === utils.events.MOVE) ? -1 : 0;
 		props.buttons = 1;
-		props.which = 1;
+		props.which = props.button + 1;
 		// Pointer Events properties
 		props.pointerId = touch.identifier + 2; // avoid id collision: 1 is reserved for mouse events mapping
 		props.pointerType = "touch";
@@ -282,8 +285,7 @@ define([
 	 * @return HTMLElement the DOM element.
 	 */
 	function elementFromTouch(touch) {
-		//todo: investigate #15821 (different behaviors?)
-		return touch.target.ownerDocument.elementFromPoint(touch.pageX, touch.pageY);
+		return touch.target.ownerDocument.elementFromPoint(touch.clientX, touch.clientY);
 	}
 
 	// todo:refactor + document TouchTracker/TouchInfo
