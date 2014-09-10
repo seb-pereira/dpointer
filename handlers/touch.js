@@ -401,6 +401,10 @@ define([
 		 */
 		determineTouchAction: function (targetNode) {
 			return determineTouchActionFromAttr(targetNode);
+		},
+		
+		preventTouchAction: function (pointerId) {
+			tracker.preventTouchAction(pointerId - 2);
 		}
 	};
 });

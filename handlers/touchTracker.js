@@ -58,6 +58,11 @@ define([
 			return t[touchId].touchAction;
 		},
 
+		preventTouchAction: function (touchId) {
+			t[touchId].touchAction = utils.TouchAction.NONE;
+			t[touchId].enforceTouchAction = false;
+		},
+
 		updateScroll: function (touch) {
 			if (t[touch.identifier].firstMove) {
 				var touchInfo = t[touch.identifier];
